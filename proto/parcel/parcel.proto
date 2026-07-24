@@ -1,0 +1,54 @@
+syntax="proto3";
+
+
+package parcel;
+
+
+option go_package = "github.com/sachinggsingh/PDTS-Go/pb/parcel";
+
+
+service ParcelService{
+    rpc CreateParcel(CreateParcelRequest) returns (CreateParcelResponse);
+    rpc UpdateParcel(UpdateParcelRequest) returns (UpdateParcelResponse);
+}
+
+
+
+message CreateParcelRequest{
+    string user_id = 1;
+}
+
+message CreateParcelResponse{
+    string parcel_id = 1;
+}
+
+
+message UpdateParcelRequest{
+    string parcel_id = 1;
+    Address address = 2; 
+    ParcelStatus status = 3;
+}
+
+enum ParcelStatus {
+    PARCEL_STATUS_UNSPECIFIED = 0;
+    PARCEL_STATUS_CREATED = 1;
+    PARCEL_STATUS_PICKED_UP = 2;
+    PARCEL_STATUS_IN_TRANSIT = 3;
+    PARCEL_STATUS_DELIVERED = 4;
+    PARCEL_STATUS_CANCELLED = 5;
+}
+
+message Address{
+    string address_line_1 = 1;
+    string address_line_2 = 2;
+    string city = 3;
+    string state = 4;
+    string country = 5;
+    string postal_code = 6;
+}
+
+message UpdateParcelResponse{
+    string parcel_id = 1;
+    ParcelStatus status = 2;
+    Address address = 3;
+}

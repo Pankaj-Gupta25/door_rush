@@ -1,0 +1,20 @@
+syntax="proto3";
+
+package tracking;
+
+option go_package="github.com/sachinggsingh/PDTS-Go/pb/tracking";
+
+
+service TrackingService{
+    rpc GetTrackingDetails(GetTrackingDetailsRequest) returns (GetTrackingDetailsResponse);
+}
+
+message GetTrackingDetailsRequest{
+    string parcel_id = 1;
+}
+
+message GetTrackingDetailsResponse{
+    string parcel_id = 1;
+    string status = 2;
+    repeated string history = 3;
+}
