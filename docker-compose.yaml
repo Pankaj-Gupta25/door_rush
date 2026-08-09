@@ -1,0 +1,158 @@
+services:
+  # zookeeper
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - backend-net
+
+  # kafka
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"     # Host access
+      - "29092:29092"   # Docker internal
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - backend-net
+
+  # mongodb
+  mongodb:
+    image: mongo:7-jammy
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"   # For Mongo Compass (remove in prod)
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    networks:
+      - backend-net
+
+  # Redis for caching and rate limitting 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD","redis-cli", "ping"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+    restart: always
+
+
+  # api-gateway
+  api-gateway:
+    build: 
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: api_gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka
+      - mongodb
+    env_file:
+      - ./api-gateway/.env
+    networks:
+      - backend-net
+
+  # auth-service
+  auth-service:
+    build: 
+      context: .
+      dockerfile: auth-service/Dockerfile
+    container_name: auth_service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongodb
+    env_file:
+      - ./auth-service/.env
+    networks:
+      - backend-net
+
+  # parcel-service
+  parcel-service:
+    build: 
+      context: .
+      dockerfile: parcel-service/Dockerfile
+    container_name: parcel_service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - kafka
+      - mongodb
+    env_file:
+      - ./parcel-service/.env
+    environment:
+      - KAFKA_BROKERS=kafka:29092
+    networks:
+      - backend-net
+
+  # tracking-service
+  tracking-service:
+    build: 
+      context: .
+      dockerfile: tracking-service/Dockerfile
+    container_name: tracking_service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - kafka
+      - mongodb
+    env_file:
+      - ./tracking-service/.env
+    environment:
+      - KAFKA_BROKERS=kafka:29092
+    networks:
+      - backend-net
+
+  # user-service
+  user-service:
+    build: 
+      context: .
+      dockerfile: user-service/Dockerfile
+    container_name: user_service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - mongodb
+    env_file:
+      - ./user-service/.env
+    networks:
+      - backend-net
+
+# networks
+networks:
+  backend-net:
+    driver: bridge
+
+# volumes
+volumes:
+  mongodb_data:
+  redis-data:
