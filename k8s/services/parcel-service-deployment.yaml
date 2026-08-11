@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: parcel-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: parcel-service
+  template:
+    metadata:
+      labels:
+        app: parcel-service
+    spec:
+      containers:
+      - name: parcel-service
+        image: pdts-parcel-service:v1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8082
+        envFrom:
+        - configMapRef:
+            name: pdts-config
+        - secretRef:
+            name: pdts-secrets
+        env:
+        - name: MONGODB_DATABASE
+          valueFrom:
+            configMapRef:
+              name: pdts-config
+              key: MONGODB_DATABASE_PARCEL

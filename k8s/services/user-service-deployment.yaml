@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - name: user-service
+        image: pdts-user-service:v1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8084
+        envFrom:
+        - configMapRef:
+            name: pdts-config
+        - secretRef:
+            name: pdts-secrets
+        env:
+        - name: MONGODB_DATABASE
+          valueFrom:
+            configMapRef:
+              name: pdts-config
+              key: MONGODB_DATABASE_USER

@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tracking-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tracking-service
+  template:
+    metadata:
+      labels:
+        app: tracking-service
+    spec:
+      containers:
+      - name: tracking-service
+        image: pdts-tracking-service:v1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8083
+        envFrom:
+        - configMapRef:
+            name: pdts-config
+        - secretRef:
+            name: pdts-secrets
+        env:
+        - name: MONGODB_DATABASE
+          valueFrom:
+            configMapRef:
+              name: pdts-config
+              key: MONGODB_DATABASE_TRACKING

@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+      - name: auth-service
+        image: pdts-auth-service:v1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8081
+        envFrom:
+        - configMapRef:
+            name: pdts-config
+        - secretRef:
+            name: pdts-secrets
+        env:
+        - name: MONGODB_DATABASE
+          valueFrom:
+            configMapRef:
+              name: pdts-config
+              key: MONGODB_DATABASE_AUTH
